@@ -1,0 +1,688 @@
+<meta charset="utf-8">
+<title>Úkryty ČR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: mapa vlevo, pracovní panel vpravo (mobil: pod mapou); dva pohledy – Česká republika a město. Barvy civilní ochrany: modrá = existující úkryty, oranžová = navržené plochy, švestková = deficit. */
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --fg:#1b2127; --muted:#5d6873; --line:#dde2e7; --soft:#eef1f4;
+  --map:#eceeea; --land:#f7f7f4; --bld:#c9ccc8; --rdc:#b9bdb8; --rail:#8a8f93; --water:#bcd3e3;
+  --shelter:#1F5FAE; --site:#D9531E; --deficit:#7A3E78; --rest:#9aa3ab; --flood:#0A8FB0; --floodbg:#d9f1f7;
+  --ok:#2e7d4f; --okbg:#e3f1e8; --no:#b3261e; --nobg:#f9e1df; --unk:#8a6200; --unkbg:#fbf0d2;
+  --d1:#e4ecef; --d2:#b9cdd6; --d3:#86a9b8; --d4:#557f93; --d5:#2e566b;
+  --u1:#f2e6f0; --u2:#dcb9d6; --u3:#bd84b4; --u4:#93528c; --u5:#5e2a5a;
+  --k1:#e6eef8; --k2:#bcd2ee; --k3:#86aee0; --k4:#4f83c8; --k5:#1F5FAE;
+  --f-disp:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101417; --panel:#161b1f; --fg:#e6eaee; --muted:#9aa6b1; --line:#2a3238; --soft:#1d2328;
+  --map:#0f1316; --land:#181d21; --bld:#2d3439; --rdc:#3b444b; --rail:#6b747b; --water:#1d3444;
+  --shelter:#4F86D4; --site:#E0662E; --deficit:#B06AAE; --rest:#6c7680; --flood:#2CC4E6; --floodbg:#0f3340;
+  --ok:#6cc08d; --okbg:#173325; --no:#f08a80; --nobg:#3a1c1a; --unk:#e2b54a; --unkbg:#33290f;
+  --d1:#1c2a31; --d2:#24414e; --d3:#2f5f73; --d4:#4a87a0; --d5:#7fb6cc;
+  --u1:#2a1c29; --u2:#46263f; --u3:#6b3866; --u4:#9a5594; --u5:#cf8cc9;
+  --k1:#1a2431; --k2:#1f3a5c; --k3:#2c5a8e; --k4:#4a7fc2; --k5:#8db4e6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101417; --panel:#161b1f; --fg:#e6eaee; --muted:#9aa6b1; --line:#2a3238; --soft:#1d2328;
+  --map:#0f1316; --land:#181d21; --bld:#2d3439; --rdc:#3b444b; --rail:#6b747b; --water:#1d3444;
+  --shelter:#4F86D4; --site:#E0662E; --deficit:#B06AAE; --rest:#6c7680; --flood:#2CC4E6; --floodbg:#0f3340;
+  --ok:#6cc08d; --okbg:#173325; --no:#f08a80; --nobg:#3a1c1a; --unk:#e2b54a; --unkbg:#33290f;
+  --d1:#1c2a31; --d2:#24414e; --d3:#2f5f73; --d4:#4a87a0; --d5:#7fb6cc;
+  --u1:#2a1c29; --u2:#46263f; --u3:#6b3866; --u4:#9a5594; --u5:#cf8cc9;
+  --k1:#1a2431; --k2:#1f3a5c; --k3:#2c5a8e; --k4:#4a7fc2; --k5:#8db4e6; color-scheme:dark}
+
+/* jádro leaflet.css (1.9.4) */
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;-webkit-tap-highlight-color:transparent;outline-offset:1px}
+.leaflet-container .leaflet-marker-pane img,.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}
+.leaflet-container.leaflet-touch-zoom{touch-action:pan-x pan-y}.leaflet-container.leaflet-touch-drag{touch-action:none}
+.leaflet-pane{z-index:400}.leaflet-overlay-pane{z-index:400}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}
+.leaflet-map-pane canvas{z-index:100}.leaflet-map-pane svg{z-index:200}
+.leaflet-zoom-animated{transform-origin:0 0}
+.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
+.leaflet-interactive{cursor:pointer}.leaflet-grab{cursor:grab}.leaflet-dragging .leaflet-grab{cursor:move}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;float:left;clear:both}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
+.leaflet-top .leaflet-control{margin-top:10px}.leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:10px;float:right}.leaflet-bottom .leaflet-control{margin-bottom:10px}
+.leaflet-bar{border-radius:6px;border:1px solid var(--line);background:var(--panel);overflow:hidden}
+.leaflet-bar a{display:block;width:32px;height:32px;line-height:32px;text-align:center;text-decoration:none;color:var(--fg);font:600 18px var(--f-body);border-bottom:1px solid var(--line)}
+.leaflet-bar a:last-child{border-bottom:0}.leaflet-bar a:hover{background:var(--soft)}
+.leaflet-control-scale-line{border:2px solid var(--muted);border-top:none;color:var(--fg);font:11px var(--f-body);padding:0 4px;background:color-mix(in srgb,var(--panel) 80%,transparent)}
+.leaflet-control-attribution{font:11px var(--f-body);color:var(--muted);background:color-mix(in srgb,var(--panel) 85%,transparent);padding:2px 6px}
+.leaflet-tooltip{position:absolute;padding:6px 8px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;font:13px/1.35 var(--f-body);white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.leaflet-tooltip-top:before,.leaflet-tooltip-bottom:before,.leaflet-tooltip-left:before,.leaflet-tooltip-right:before{display:none}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 420px;grid-template-rows:auto minmax(0,1fr);height:100%}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);min-width:0}
+.brand{display:flex;align-items:center;gap:10px;font:700 18px var(--f-disp);letter-spacing:.01em;white-space:nowrap}
+.brand svg{flex:none}
+.crumbs{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--muted);min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.crumbs a{color:var(--shelter);text-decoration:none;font-weight:600}.crumbs a:hover{text-decoration:underline}
+#map{background:var(--map);height:100%;min-height:340px;position:relative}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:20px 20px 32px;display:flex;flex-direction:column;gap:24px;min-width:0}
+@media (max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:auto 58vh auto;height:auto}#map{height:58vh}aside{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-inline:16px}.brand span{display:none}}
+h1{font:700 27px/1.1 var(--f-disp);letter-spacing:.005em;margin:2px 0 0;text-wrap:balance}
+h2{font:600 13px var(--f-disp);text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 10px}
+.eyebrow{font:600 13px var(--f-disp);letter-spacing:.09em;text-transform:uppercase;color:var(--site)}
+.sub{color:var(--muted);font-size:14px;margin-top:6px}
+section{min-width:0}
+.big{font:700 30px/1 var(--f-disp)}
+.kpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kpi div{display:flex;flex-direction:column;gap:3px;min-width:0}.kpi span{font-size:13px;color:var(--muted);line-height:1.25}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:9px 6px;text-align:center;font:600 14px/1.15 var(--f-disp);color:var(--muted);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button small{display:block;font:400 11px var(--f-body);margin-bottom:2px}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,.row:focus-visible{outline:2px solid var(--site);outline-offset:2px}
+.legend{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-size:13px;color:var(--muted)}
+.ramp{display:flex;gap:2px;height:10px}.ramp i{flex:1;border-radius:2px}
+.ramp-l{display:flex;justify-content:space-between;font-size:12px}
+.key{display:flex;align-items:center;gap:8px}
+.sw{width:14px;height:14px;border-radius:3px;flex:none}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin-top:8px}
+.bal{display:flex;height:16px;gap:2px;border-radius:4px;overflow:hidden;margin:12px 0 10px}
+.rows{display:grid;grid-template-columns:auto 1fr auto auto;gap:4px 10px;align-items:center;font-size:14px}
+.rows .n{text-align:right;font-weight:600}.rows .p{text-align:right;color:var(--muted);min-width:44px}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line);max-height:440px;overflow-y:auto}
+@media (max-width:900px){.list{max-height:none}}
+.row{all:unset;cursor:pointer;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:2px 10px;padding:9px 4px;border-bottom:1px solid var(--line);align-items:center}
+.row:hover{background:var(--soft)}
+.row[aria-current="true"]{background:color-mix(in srgb,var(--site) 12%,transparent)}
+.rank{font:700 17px var(--f-disp);color:var(--site);text-align:center}
+.row b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t{grid-column:2;font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.row .q{grid-row:1/3;grid-column:3;text-align:right;font:700 18px var(--f-disp)}
+.row .q small{display:block;font:400 11px var(--f-body);color:var(--muted)}
+.pill{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.rob{border-color:var(--site);color:var(--site)}
+.pill.done{background:var(--site);border-color:var(--site);color:#fff}
+.dotst{width:12px;height:12px;border-radius:50%;justify-self:center;border:2px solid var(--rest)}
+.dotst.done{background:var(--site);border-color:var(--site)}
+.more{all:unset;cursor:pointer;padding:10px 4px;font-weight:600;color:var(--site)}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--soft)}
+.card h3{font:700 20px/1.15 var(--f-disp);margin:0}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.facts div{display:flex;flex-direction:column;min-width:0}.facts span{font-size:12px;color:var(--muted)}.facts strong{font:700 19px var(--f-disp)}
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.st{font-size:12px;padding:2px 8px;border-radius:4px;font-weight:600}
+.st.ok{color:var(--ok);background:var(--okbg)}.st.no{color:var(--no);background:var(--nobg)}.st.unk{color:var(--unk);background:var(--unkbg)}
+.card a,.link{color:var(--shelter);font-weight:600}
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:var(--site);color:#fff;font:600 15px var(--f-disp);padding:8px 14px;border-radius:6px;align-self:flex-start}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:5px 6px;text-align:right;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:12px}
+tr.cur td{font-weight:700}
+.note{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px}.note p{margin:0}
+.lbl{font:700 13px/1 var(--f-disp);color:#fff;background:var(--site);border:2px solid var(--panel);border-radius:999px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.lbl.sh{background:var(--shelter)}.lbl.sm{font-size:0;border-width:1.5px}
+.search{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.search input,.search select{font:14px var(--f-body);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
+.search input{grid-column:1/-1}
+.chart{width:100%;display:block;overflow:visible}
+.chart text{font:12px var(--f-body);fill:var(--muted)}
+.chart .lab{fill:var(--fg);font-weight:600}
+.tip{position:absolute;pointer-events:none;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap;z-index:5}
+.cwrap{position:relative}
+.hbar{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 4.2em;gap:4px 8px;align-items:center;font-size:13px}
+.hbar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.hbar .nm:hover{color:var(--shelter)}
+.hbar .tr{height:12px;background:var(--soft);border-radius:0 3px 3px 0;position:relative}
+.hbar .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:0 3px 3px 0}
+.hbar .v{text-align:right;font-weight:600}
+.prog{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin-top:3px}.prog i{display:block;height:100%;background:var(--site)}
+.bm{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.bm button{all:unset;cursor:pointer;padding:7px 12px;font:600 13px var(--f-disp);color:var(--muted)}
+.bm button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+.bm-note{max-width:230px;margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:12px/1.35 var(--f-body);color:var(--fg)}
+.rev{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rev button{all:unset;cursor:pointer;padding:6px 12px;border-radius:6px;border:1.5px solid var(--line);font:600 14px var(--f-disp);color:var(--fg);background:var(--panel)}
+.rev button[aria-pressed="true"].y{background:var(--ok);border-color:var(--ok);color:#fff}
+.rev button[aria-pressed="true"].n{background:var(--no);border-color:var(--no);color:#fff}
+.rev textarea{width:100%;min-height:44px;font:13px var(--f-body);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;box-sizing:border-box}
+.pill.fz{background:var(--flood);border-color:var(--flood);color:#fff;font-weight:600}
+.lbl.fz{border:3px solid var(--flood);box-shadow:0 0 0 2px var(--panel),0 1px 3px rgba(0,0,0,.3)}
+.st.fz{color:#fff;background:var(--flood)}
+.fzbar{background:var(--flood);color:#fff;font-weight:600;font-size:13px;padding:6px 10px;border-radius:6px;margin:0 0 8px}
+.pill.ok{border-color:var(--ok);color:var(--ok)}.pill.ne{border-color:var(--no);color:var(--no)}
+.listbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.listbar button{all:unset;cursor:pointer;color:var(--shelter);font-weight:600}
+#revout{width:100%;min-height:90px;font:12px ui-monospace,Menlo,monospace;box-sizing:border-box}
+.flt{display:flex;flex-direction:column;gap:12px}
+.fl{display:flex;flex-direction:column;gap:5px;font-size:14px}
+.fl label,.fl>span{display:flex;justify-content:space-between;gap:8px;color:var(--fg)}
+.fl label b,.fl>span b{font-weight:700}
+.fl input[type=range]{width:100%;accent-color:var(--site)}
+.fl select{font:14px var(--f-body);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{all:unset;cursor:pointer;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chips button[aria-pressed="true"]{border-color:var(--site);color:var(--fg);background:color-mix(in srgb,var(--site) 14%,transparent)}
+.fsum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;border-radius:8px;background:var(--soft)}
+.fsum div{display:flex;flex-direction:column}.fsum b{font:700 20px var(--f-disp)}.fsum span{font-size:12px;color:var(--muted)}
+.fbtn{display:flex;gap:14px;flex-wrap:wrap}.fbtn button{all:unset;cursor:pointer;color:var(--shelter);font-weight:600;font-size:14px}
+.hint{font-size:12px;color:var(--muted)}
+.row .rank.o{color:var(--muted);font-size:12px;font-weight:600}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font:600 15px var(--f-disp);z-index:1200;pointer-events:none}
+[data-view]{display:contents}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.leaflet-zoom-anim .leaflet-zoom-animated{transition:none}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="4" fill="var(--site)"/><path d="M11 4 L18.5 17 H3.5 Z" fill="var(--shelter)"/></svg><span>Úkryty ČR</span></div>
+    <nav class="crumbs" id="crumbs" aria-label="Umístění"></nav>
+  </header>
+  <div id="map" role="application" aria-label="Mapa"><div class="loading" id="loading">Načítám data…</div></div>
+  <aside id="panel">
+    <!-- ================= PŘEHLED ČR ================= -->
+    <div data-view="cr" id="v-cr">
+      <header>
+        <div class="eyebrow">Celá republika · fáze 1</div>
+        <h1>Plochy pro modulární úkryty</h1>
+        <div class="sub">Města se do aplikace doplňují postupně, kraj po kraji. Národní přehled ukazuje evidenci stálých úkrytů HZS a stav zpracování.</div>
+      </header>
+      <section>
+        <div class="kpi" id="cr-kpi"></div>
+        <div class="legend" id="cr-legend"></div>
+        <label class="chk"><input type="checkbox" id="c-sh"> Body stálých úkrytů HZS</label>
+      </section>
+      <section aria-labelledby="h-kr">
+        <h2 id="h-kr">Místa ve veřejných úkrytech na 100 obyvatel</h2>
+        <div class="hbar" id="cr-kraje"></div>
+      </section>
+      <section aria-labelledby="h-mesta">
+        <h2 id="h-mesta">Města</h2>
+        <div class="search"><input id="q" type="search" placeholder="Hledat město" aria-label="Hledat město"><select id="fk" aria-label="Kraj"></select><select id="fs" aria-label="Stav"><option value="">Vše</option><option value="hotovo">Zpracováno</option><option value="čeká">Čeká</option></select></div>
+        <div class="list" id="cr-list"></div>
+        <button class="more" id="cr-more"></button>
+      </section>
+      <section class="card" id="cr-city" hidden></section>
+      <section class="note">
+        <h2>Zdroje</h2>
+        <p id="cr-src"></p>
+      </section>
+    </div>
+
+    <!-- ================= MĚSTO ================= -->
+    <div data-view="city" id="v-city" hidden>
+      <header>
+        <div class="eyebrow" id="c-eye"></div>
+        <h1 id="c-name"></h1>
+        <div class="sub" id="c-scen"></div>
+      </header>
+      <section aria-labelledby="h-vr">
+        <h2 id="h-vr">Vrstva</h2>
+        <div class="seg" role="group" aria-label="Výběr vrstvy">
+          <button id="b1" aria-pressed="false"><small>1</small>Úkryty</button>
+          <button id="b2" aria-pressed="false"><small>2</small>Obyvatelé</button>
+          <button id="b3" aria-pressed="true"><small>3</small>Plochy</button>
+        </div>
+        <div class="legend" id="legend"></div>
+        <label class="chk"><input type="checkbox" id="c800"> Dosah úkrytů i pro 800 m</label>
+      </section>
+      <section aria-labelledby="h-flt" id="fsec">
+        <h2 id="h-flt">Filtr ploch</h2>
+        <div class="flt">
+          <div class="fl"><label for="ffp">Půdorys bunkru</label><select id="ffp">
+            <option value="">bez omezení (všechny plochy, aspoň 6 × 8 m)</option>
+            <option value="6x8">bunkr 6 × 8 m</option>
+            <option value="8x12">bunkr 8 × 12 m</option>
+            <option value="10x20">bunkr 10 × 20 m</option>
+            <option value="custom">vlastní rozměr…</option></select>
+            <div id="ffpc" hidden style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="hint">šíře m <input id="ffw" type="number" min="6" max="25" step="0.5" value="8" style="width:100%"></label><label class="hint">délka m <input id="ffl" type="number" min="8" max="60" step="0.5" value="16" style="width:100%"></label></div>
+            <label class="hint" style="display:flex;justify-content:space-between">odstup kolem bunkru <span><input id="ffo" type="number" min="0" max="5" step="0.5" value="0" style="width:56px"> m</span></label></div>
+          <div class="fl"><label for="fsl">Max. sklon terénu <b id="fslv"></b></label><input type="range" id="fsl" min="1" max="21" step="1" aria-describedby="fslh"><span class="hint" id="fslh"></span></div>
+          <div class="fl"><label for="far">Min. velikost plochy <b id="farv"></b></label><input type="range" id="far" min="0" max="8" step="1"></div>
+          <div class="fl"><label for="fdp">Doprava dílů a montáž jeřábem</label><select id="fdp"><option value="2">vše</option><option value="1" selected>bez omezení nebo k ověření</option><option value="0">jen bez zjištěného omezení</option></select></div>
+          <div class="fl"><label for="fpr">Příjezd techniky</label><select id="fpr"><option value="1">z komunikace nebo po volném terénu</option><option value="0">jen z pojízdné komunikace</option><option value="2">vše, i bez zjištěného příjezdu</option></select></div>
+          <div class="fl"><span>Povrch</span><div class="chips" id="fpv" role="group" aria-label="Povrch"></div></div>
+          <div class="fl"><span>Typ plochy</span><div class="chips" id="fty" role="group" aria-label="Typ plochy"></div></div>
+          <div class="fl"><label for="ffz">Povodňové území</label><select id="ffz"><option value="" selected>zobrazit všechny plochy (v území označené)</option><option value="out">skrýt plochy v povodňovém území</option><option value="in">jen plochy v povodňovém území</option></select></div>
+          <label class="chk"><input type="checkbox" id="cfz" checked> Ukázat povodňové území na mapě</label>
+          <label class="chk"><input type="checkbox" id="fpod"> Skrýt plochy na poddolovaném území (neověřeno)</label>
+          <label class="chk"><input type="checkbox" id="fnav" checked> Zvýraznit návrh pokrytí obyvatel (čísla)</label>
+          <div class="fsum" id="fsum" aria-live="polite"></div>
+          <div class="fbtn"><button id="fcsv">Stáhnout vybrané plochy (CSV)</button><button id="freset">Zrušit filtr</button></div>
+          <textarea id="csvout" hidden readonly aria-label="CSV k zkopírování" style="width:100%;min-height:90px;font:12px ui-monospace,Menlo,monospace;box-sizing:border-box"></textarea>
+        </div>
+      </section>
+      <section aria-labelledby="h-det" id="detail" hidden>
+        <h2 id="h-det">Plocha</h2>
+        <div class="card" id="card"></div>
+      </section>
+      <section aria-labelledby="h-list">
+        <h2 id="h-list">Databáze ploch</h2>
+        <div class="fl" style="margin-bottom:8px"><label for="fsort">Řadit podle</label><select id="fsort"><option value="a">velikosti plochy</option><option value="u5">obyvatel bez úkrytu do 500 m</option><option value="sl">sklonu (nejrovnější první)</option><option value="n">pořadí v návrhu pokrytí</option></select></div>
+        <div class="listbar"><span id="revsum">Zatím bez hodnocení</span><button id="revcopy">Zkopírovat hodnocení</button></div>
+        <textarea id="revout" hidden readonly aria-label="Hodnocení ploch k odeslání"></textarea>
+        <div class="list" id="list"></div>
+        <button class="more" id="more"></button>
+      </section>
+      <section aria-labelledby="h-bil">
+        <h2 id="h-bil">Návrh pokrytí – bilance obyvatel</h2>
+        <div class="hint" id="balnote" style="margin:-4px 0 10px"></div>
+        <div class="kpi" id="kpi"></div>
+        <div class="bal" id="balbar" aria-hidden="true"></div>
+        <div class="rows" id="balrows"></div>
+      </section>
+      <section aria-labelledby="h-cum">
+        <h2 id="h-cum">Pokrytí obyvatel podle počtu ploch</h2>
+        <div class="cwrap" id="cumwrap"><svg class="chart" id="cum" role="img" aria-label="Kumulativní pokrytí obyvatel"></svg></div>
+        <div class="sub" id="cumnote"></div>
+      </section>
+      <section aria-labelledby="h-zsj">
+        <h2 id="h-zsj">Části města (ZSJ)</h2>
+        <div class="legend" style="flex-direction:row;flex-wrap:wrap;gap:12px;margin:0 0 10px"><span class="key"><span class="sw" style="background:var(--shelter)"></span>Pokryto úkryty</span><span class="key"><span class="sw" style="background:var(--site)"></span>Na navržených plochách</span><span class="key"><span class="sw" style="background:var(--deficit)"></span>Deficit</span></div>
+        <div class="cwrap" id="zsjwrap"><svg class="chart" id="zsj" role="img" aria-label="Obyvatelé podle částí města"></svg></div>
+      </section>
+      <section aria-labelledby="h-sens">
+        <h2 id="h-sens">Citlivost na práh dosahu</h2>
+        <div style="overflow-x:auto"><table id="sens"></table></div>
+      </section>
+      <section class="note">
+        <h2>Jak číst</h2>
+        <p>Databáze ploch obsahuje všechny plochy, které projdou geometrií: parcela z povoleného seznamu katastru, mimo budovy a objekty vyšší než 2 m a mimo sesuvy, a vejde se do ní celý obdélník 6 × 8 m (nejmenší bunkr). Patří sem i celá povrchová parkoviště. Půdorys bunkru, sklon, příjezd, povrch a další vlastnosti jsou parametry k filtrování. Plochy v povodňovém území (VÚV TGM) se nevyřazují, jsou označené tyrkysovým obrysem.</p>
+        <p>Filtr půdorysu: pro každou plochu je spočtený nejdelší obdélník, který se do ní vejde při šíři 6 až 25 m (libovolně natočený). Počet bunkrů na ploše je hrubý odhad z rozměrů plochy, ne rozmístění.</p>
+        <p>Povrch je z OpenStreetMap, kde je zmapovaný; jinak odvozený ze způsobu využití parcely v katastru (zdroj je u každé plochy). Sklon je medián z výškového modelu DMR 5G v buňkách 10 m.</p>
+        <p>Návrh pokrytí (čísla) je zvlášť: nejmenší sada ploch, kam se vejde bunkr 6 × 8 m, která pokryje obyvatele do 500 m chůze; každý obyvatel je započten jednou. Kapacita plochy = plocha / 2 m² na osobu. Počet modulů je fáze 2.</p>
+        <p>Plochy jsou odvozené z dat (OSM, RÚIAN, výškový model ČÚZK) a ověřené jen zčásti na ortofotu. Ploty, zahrady a sítě pod povrchem v datech nejsou. Každou plochu před rozhodnutím ověřit v terénu.</p>
+        <p id="c-src"></p>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(async function(){
+const $=s=>document.querySelector(s);
+const nf=new Intl.NumberFormat('cs-CZ'); const N=v=>v==null?'—':nf.format(Math.round(v));
+const P1=v=>(v*100).toLocaleString('cs-CZ',{maximumFractionDigits:1})+' %';
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let CR,REG;
+const gunzipJSON=async b=>{if(b[0]===0x1f&&b[1]===0x8b){const s=new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'));return JSON.parse(await new Response(s).text())}return JSON.parse(new TextDecoder().decode(b))};
+const getJSON=p=>{const el=document.querySelector(`script[type="application/json"][data-path="${p}"]`); if(el) return Promise.resolve(JSON.parse(el.textContent));
+  const gz=document.querySelector(`script[type="application/gzip-base64"][data-path="${p}"]`); if(gz){const bin=atob(gz.textContent.trim());const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return gunzipJSON(u)}
+  const plain=()=>fetch(p).then(r=>{if(!r.ok)throw 0;return r.json()});
+  if(!p.startsWith('data/cities/')) return plain();
+  const b64=()=>fetch(p+'.gz.txt').then(async r=>{if(!r.ok)throw 0;const bin=atob((await r.text()).trim());const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return gunzipJSON(u)});
+  return fetch(p+'.gz').then(async r=>{if(!r.ok)throw 0;return gunzipJSON(new Uint8Array(await r.arrayBuffer()))}).catch(b64).catch(plain)};
+try{ [CR,REG]=await Promise.all([getJSON('data/cr.json'),getJSON('data/registry.json')]); }
+catch(e){ $('#loading').textContent='Data se nepodařilo načíst. Obnovte stránku.'; return; }
+$('#loading').remove();
+
+const map=L.map('map',{preferCanvas:true,minZoom:6,maxZoom:19,zoomSnap:0.25});
+map.attributionControl.setPrefix(false).addAttribution('© OpenStreetMap · ČÚZK · HZS ČR · ČSÚ');
+L.control.scale({imperial:false,position:'bottomleft'}).addTo(map);
+const R=L.canvas({padding:0.3});
+const ORT=L.tileLayer('https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,maxNativeZoom:20,attribution:'Ortofoto © ČÚZK'});
+let ortho=false, ortOk=false, ortErr=0;
+ORT.on('tileload',()=>{ortOk=true}); ORT.on('tileerror',()=>{ortErr++; if(!ortOk&&ortErr>3){setOrtho(false); const n=document.getElementById('bmnote'); if(n){n.hidden=false; n.textContent='Ortofoto se v této verzi nenačte (bezpečnostní omezení prohlížeče aplikace). Otevřete soubor ukryty-cr.html nebo webovou verzi.'}}});
+const BM=L.control({position:'topright'});
+BM.onAdd=()=>{const d=L.DomUtil.create('div'); d.innerHTML='<div class="bm" role="group" aria-label="Podkladová mapa"><button id="bmv" aria-pressed="true">Mapa</button><button id="bmo" aria-pressed="false">Ortofoto</button></div><div class="bm-note" id="bmnote" hidden></div>'; L.DomEvent.disableClickPropagation(d); return d};
+function setOrtho(on){ ortho=on; document.getElementById('bmv')?.setAttribute('aria-pressed',String(!on)); document.getElementById('bmo')?.setAttribute('aria-pressed',String(on));
+  if(!C) return; if(on){ ORT.addTo(map); ORT.bringToBack(); map.removeLayer(G.base); base.bnd.forEach(l=>l.addTo(map)); } else { map.removeLayer(ORT); base.bnd.forEach(l=>map.removeLayer(l)); G.base.addTo(map); }
+  styleCity(); show(layer); }
+const flip=r=>r.map(c=>[c[1],c[0]]);
+const polys=g=>g.map(flip);
+const ramp=(v,br,pre)=>{let i=0;while(i<br.length&&v>br[i])i++;return css(`--${pre}${i+1}`)};
+
+/* ======================= PŘEHLED ČR ======================= */
+const KBR=[0.3,0.75,1.5,3];   // míst na 100 obyvatel
+const kr=CR.kraje.map(k=>({k,v:k.uk_ver_kap/k.obyv*100}));
+const stat=L.polygon(polys(CR.stat),{renderer:R,interactive:false});
+const krL=kr.map(({k,v})=>L.polygon(polys(k.g),{renderer:R}).bindTooltip(`<b>${esc(k.nazev)}</b><br>${N(k.obyv)} obyvatel<br>${N(k.uk_ver_kap)} míst ve veřejných úkrytech (${v.toLocaleString('cs-CZ',{maximumFractionDigits:2})} na 100 obyv.)<br>Zpracováno měst: ${k.hotovo} z ${k.mest}`,{sticky:true}).on('click',()=>{ $('#fk').value=String(k.kod); renderCities(); map.flyToBounds(L.polygon(polys(k.g)).getBounds(),{padding:[20,20],duration:.5}); }));
+const cityL=REG.map(c=>{const r=c.obyv?Math.max(2.5,Math.min(14,Math.sqrt(c.obyv)/45)):3;
+  return L.circleMarker(c.ll,{renderer:R,radius:c.stav==='hotovo'?r+2:r}).bindTooltip(`<b>${esc(c.nazev)}</b> · ${esc(c.status)}<br>${N(c.obyv)} obyvatel (2021)<br>Veřejné úkryty HZS: ${N(c.uk_ver_kap)} míst<br>${c.stav==='hotovo'?'<b>Zpracováno</b>'+(c.spolecne?' společně ('+esc(c.spolecne.join(' + '))+')':'')+' – klikněte pro detail':'Čeká na zpracování'}`).on('click',()=>openCity(c))});
+const shL=CR.ukryty.map(u=>L.circleMarker([u[0],u[1]],{renderer:R,radius:2.2,interactive:false}));
+const GCR={stat:L.layerGroup([stat]),kraje:L.layerGroup(krL),cities:L.layerGroup(cityL),sh:L.layerGroup(shL)};
+function styleCR(){
+  stat.setStyle({color:css('--muted'),weight:1.5,fillColor:css('--land'),fillOpacity:1});
+  krL.forEach((l,i)=>l.setStyle({color:css('--panel'),weight:1.5,fillColor:ramp(kr[i].v,KBR,'k'),fillOpacity:.9}));
+  cityL.forEach((l,i)=>{const c=REG[i];l.setStyle(c.stav==='hotovo'?{color:css('--panel'),weight:2,fillColor:css('--site'),fillOpacity:1}:{color:css('--fg'),weight:1,opacity:.55,fillColor:css('--panel'),fillOpacity:.6})});
+  shL.forEach((l,i)=>l.setStyle({stroke:false,fillColor:CR.ukryty[i][3]?css('--fg'):css('--rest'),fillOpacity:.7}));
+}
+const T=CR.total;
+$('#cr-kpi').innerHTML=`<div><b class="big">${(T.obyv/1e6).toLocaleString('cs-CZ',{maximumFractionDigits:2})} mil.</b><span>obyvatel (SLDB 2021)</span></div>
+ <div><b class="big" style="color:var(--shelter)">${P1(T.uk_ver_kap/T.obyv)}</b><span>${N(T.uk_ver_kap)} míst v ${N(T.uk_ver_n)} veřejných úkrytech</span></div>
+ <div><b class="big" style="color:var(--site)">${T.hotovo} / ${T.mest}</b><span>měst zpracováno (${N(T.obyv_hotovo)} obyv.)</span></div>`;
+$('#cr-legend').innerHTML=`<div>Kraje: místa ve veřejných stálých úkrytech na 100 obyvatel</div><div class="ramp">${[1,2,3,4,5].map(i=>`<i style="background:var(--k${i})"></i>`).join('')}</div><div class="ramp-l"><span>0</span>${KBR.map(b=>`<span>${String(b).replace('.',',')}</span>`).join('')}<span>míst</span></div>
+ <div class="key"><span class="sw" style="background:var(--site);border-radius:50%"></span>Zpracované město – otevře detail</div><div class="key"><span class="sw" style="border:1.5px solid var(--fg);opacity:.6;border-radius:50%"></span>Čeká na zpracování (velikost = obyvatelé)</div>`;
+const krs=[...kr].sort((a,b)=>b.v-a.v), kmax=Math.max(...kr.map(x=>x.v));
+$('#cr-kraje').innerHTML=krs.map(({k,v})=>`<span class="nm" data-k="${k.kod}" title="${esc(k.nazev)}">${esc(k.nazev.replace(' kraj','').replace('Kraj ','').replace('Hlavní město ',''))}</span><span class="tr"><i style="width:${Math.max(1,v/kmax*100)}%;background:var(--shelter)"></i></span><span class="v">${v.toLocaleString('cs-CZ',{maximumFractionDigits:2,minimumFractionDigits:2})}</span>`).join('');
+$('#cr-kraje').addEventListener('click',e=>{const n=e.target.closest('.nm');if(!n)return;const k=CR.kraje.find(x=>x.kod==n.dataset.k);$('#fk').value=n.dataset.k;renderCities();map.flyToBounds(L.polygon(polys(k.g)).getBounds(),{padding:[20,20],duration:.5});});
+$('#fk').innerHTML='<option value="">Všechny kraje</option>'+[...CR.kraje].sort((a,b)=>a.nazev.localeCompare(b.nazev,'cs')).map(k=>`<option value="${k.kod}">${esc(k.nazev)} (${k.hotovo}/${k.mest})</option>`).join('');
+$('#cr-src').textContent=`Obyvatelé: ${CR.zdroje.obyv}. Úkryty: ${CR.zdroje.ukryty}, ${N(T.uk_ver_n+T.uk_nev_n)} objektů, z toho ${N(T.uk_nev_n)} pro zaměstnance, žáky a pacienty (${N(T.uk_nev_kap)} míst) – do veřejné kapacity se nepočítají. Hranice: ${CR.zdroje.hranice}. Stav k ${new Date(CR.datum).toLocaleDateString('cs-CZ')}.`;
+let crAll=false;
+function renderCities(){
+  const q=$('#q').value.trim().toLocaleLowerCase('cs'), fk=$('#fk').value, fs=$('#fs').value;
+  const rows=REG.filter(c=>(!q||c.nazev.toLocaleLowerCase('cs').includes(q))&&(!fk||String(c.kraj_kod)===fk)&&(!fs||c.stav===fs));
+  const show=crAll?rows:rows.slice(0,25);
+  $('#cr-list').innerHTML=show.length?show.map(c=>`<button class="row" data-kod="${c.kod}"><span class="dotst ${c.stav==='hotovo'?'done':''}"></span><b>${esc(c.nazev)}</b><span class="q">${N(c.obyv)}<small>obyvatel</small></span><span class="t"><span>${esc(c.kraj)}</span>${c.stav==='hotovo'?`<span class="pill done">zpracováno</span>${c.spolecne?`<span>společně: ${esc(c.spolecne.join(' + '))}</span>`:''}`:`<span>úkryty HZS ${N(c.uk_ver_kap)} míst</span>`}</span></button>`).join(''):'<p class="sub">Žádné město neodpovídá filtru.</p>';
+  $('#cr-more').hidden=rows.length<=25; $('#cr-more').textContent=crAll?'Zobrazit méně':`Zobrazit všech ${rows.length} měst`;
+}
+['#q','#fk','#fs'].forEach(s=>$(s).addEventListener('input',()=>{crAll=false;renderCities()}));
+$('#cr-more').addEventListener('click',()=>{crAll=!crAll;renderCities()});
+$('#cr-list').addEventListener('click',e=>{const b=e.target.closest('.row');if(b)openCity(REG.find(c=>c.kod==b.dataset.kod))});
+function openCity(c){
+  if(c.stav==='hotovo'){location.hash=c.key;return}
+  const box=$('#cr-city'); box.hidden=false;
+  box.innerHTML=`<h3>${esc(c.nazev)}</h3><div class="sub" style="margin:0">${esc(c.status)} · okres ${esc(c.okres)} · ${esc(c.kraj)}</div>
+   <div class="facts"><div><span>Obyvatel (2021)</span><strong>${N(c.obyv)}</strong></div><div><span>Veřejné úkryty</span><strong>${N(c.uk_ver_n)}</strong></div><div><span>Míst v úkrytech</span><strong>${N(c.uk_ver_kap)}</strong></div></div>
+   <div>Pokrytí stálými úkryty: <b>${c.obyv?P1(c.uk_ver_kap/c.obyv):'—'}</b>. Plochy pro modulární úkryty zatím nejsou spočítané – město čeká na zpracování.</div>`;
+  map.flyTo(c.ll,12,{duration:.5});
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ======================= MĚSTO ======================= */
+const DLP=(window.claude&&window.claude.use)?window.claude.use('downloads').catch(()=>null):null;
+const RKEY='ukryty-hodnoceni-v2'; let REV={}; try{REV=JSON.parse(localStorage.getItem(RKEY)||'{}')}catch(e){REV={}}
+const saveRev=()=>{try{localStorage.setItem(RKEY,JSON.stringify(REV))}catch(e){}};
+const rk=()=>C.meta.key;   // hodnocení podle stabilního ID plochy (parcela-číslo), přežije přepočet
+const rv=id=>(REV[C?rk():'']||{})[id]||{};
+const cache={}; let C=null, G={}, layer=3, cur=null, shown=40, base={}, DB=[], VIS=[];
+const AREAS=[0,200,500,1000,2000,3000,5000,10000,20000];
+const PV=['zpevněný','travnatý / nezpevněný','sportovní povrch','neurčený'];
+const F={dp:1,sl:21,ar:0,pr:1,pv:new Set(PV),ty:null,pod:false,nav:true,sort:'a',fp:null,od:0,fz:''};
+const dec=s=>{const a=s.split(',').map(Number),r=[];let la=0,lo=0;for(let i=0;i+1<a.length;i+=2){la+=a[i];lo+=a[i+1];r.push([la/1e6,lo/1e6])}return r};
+const WG=()=>C.meta.wgrid||[6,7,8,9,10,12,14,16,20,25];
+function fitInfo(d){ if(!F.fp) return {ok:true,n:null}; const W=F.fp[0]+2*F.od, Lr=F.fp[1]+2*F.od, g=WG(); let k=g.findIndex(x=>x>=W-1e-9); if(k<0) return {ok:false,n:0};
+  const ok=(d.fl&&d.fl[k]>=Lr)||false; if(!ok) return {ok:false,n:0};
+  const dm=d.dim.split('×').map(x=>parseFloat(x)); const L1=Math.max(...dm), W1=Math.min(...dm);
+  const grid=Math.max(1,Math.floor(W1/W))*Math.max(1,Math.floor(L1/Lr)); const n=Math.max(1,Math.min(grid,Math.floor(d.a/(W*Lr))));
+  return {ok:true,n}; }
+async function loadCity(key){
+  if(!cache[key]) cache[key]=await getJSON(`data/cities/${key}.json`);
+  return cache[key];
+}
+function buildCity(M){
+  Object.values(G).forEach(g=>map.removeLayer(g)); G={};
+  base={water:M.water.map(g=>L.polygon(polys(g),{renderer:R,interactive:false})),bld:M.bld.map(g=>L.polygon(polys(g),{renderer:R,interactive:false})),
+    rd2:M.rd2.map(l=>L.polyline(flip(l),{renderer:R,interactive:false})),rd1:M.rd1.map(l=>L.polyline(flip(l),{renderer:R,interactive:false})),
+    rail:M.rail.map(l=>L.polyline(flip(l),{renderer:R,interactive:false})),bnd:M.bnd.map(g=>L.polygon(polys(g),{renderer:R,interactive:false}))};
+  G.base=L.layerGroup([].concat(base.water,base.bld,base.rd2,base.rd1,base.rail,base.bnd));
+  const meta=M.meta;
+  const hexU=M.hex.filter(h=>h.u>0);
+  G.hexD=L.layerGroup(M.hex.map(h=>L.polygon(polys(h.g),{renderer:R}).bindTooltip(`<b>${N(h.p)} obyvatel</b><br>${h.d.toLocaleString('cs-CZ')} os./ha`,{sticky:true})));
+  G.hexU=L.layerGroup(hexU.map(h=>L.polygon(polys(h.g),{renderer:R}).bindTooltip(`<b>${N(h.u)} bez úkrytu</b> v dosahu ${meta.T} m<br>z ${N(h.p)} obyvatel${h.n>0?`<br>${N(h.n)} bez vhodné plochy`:''}`,{sticky:true})));
+  G.hexD._d=M.hex; G.hexU._d=hexU;
+  const iso=M.iso.map(i=>({t:i.t,l:L.polygon(i.g.map(p=>polys(p)),{renderer:R,interactive:false})}));
+  G.fz=L.layerGroup((M.fz||[]).map(g=>L.polygon(polys(g),{renderer:R,interactive:false})));
+  G.iso500=L.layerGroup(iso.filter(i=>i.t===meta.T).map(i=>i.l)); G.iso800=L.layerGroup(iso.filter(i=>i.t===meta.Tmax).map(i=>i.l)); G._iso=iso;
+  const shIcon=k=>L.divIcon({className:'',html:`<div class="lbl sh" style="width:22px;height:22px">${k==='A'?'Ú':'G'}</div>`,iconSize:[22,22]});
+  G.shel=L.layerGroup(M.sh.filter(s=>s.k==='A'||s.k==='C').map(s=>L.marker(s.ll,{icon:shIcon(s.k),keyboard:false}).bindTooltip(`<b>${esc(s.n)}</b><br>${esc(s.a)}<br>Kapacita ${N(s.c)} osob${s.k==='C'?' (odhad z plochy garáže)':''}<br>Využito v dosahu ${meta.T} m: ${N(s.u)}`)));
+  G.under=L.layerGroup(M.sh.filter(s=>s.k==='D').map(s=>L.circleMarker(s.ll,{renderer:R,radius:4}).bindTooltip(`<b>${esc(s.n)}</b><br>Podchod: jen krytí venku, nepočítá se`)));
+  DB=M.db.map(d=>{
+    d.ll2=dec(d.g); const poly=L.polygon(d.ll2,{renderer:R});
+    poly.bindTooltip(()=>`<b>${d.n?'#'+d.n+' · ':''}${esc(d.st||'—')}</b><br>${esc(d.t)} · ${N(d.a)} m² · sklon ${d.sl.toLocaleString('cs-CZ')} %<br>${esc(d.pv)}${d.pt===1?' · příjezd po terénu – ověřit':d.pt===2?' · bez zjištěného příjezdu':''}${d.zp>0?`<br><b style="color:var(--flood)">V povodňovém území (${d.zp} % plochy)</b>`:''}`,{sticky:true});
+    poly.on('click',()=>select(d.id,false));
+    let mk=null;
+    if(d.n){ const r=Math.max(20,Math.min(40,10+Math.sqrt(d.np)*0.55));
+      const big=L.divIcon({className:'',html:`<div class="lbl${d.zp>0?' fz':''}" style="width:${r}px;height:${r}px">${d.n}</div>`,iconSize:[r,r]});
+      const small=L.divIcon({className:'',html:`<div class="lbl sm${d.zp>0?' fz':''}" style="width:10px;height:10px"></div>`,iconSize:[10,10]});
+      mk=L.marker(d.ll,{icon:big,keyboard:false,zIndexOffset:1000-d.n}); mk._big=big; mk._small=small;
+      mk.bindTooltip(`<b>#${d.n} · návrh ${N(d.np)} osob</b><br>${esc(d.st||'—')} · ${esc(d.t)}`,{direction:'top',offset:[0,-r/2]});
+      mk.on('click',()=>select(d.id,false)); }
+    return {d,poly,mk};
+  });
+  G.dbP=L.layerGroup(); G.dbM=L.layerGroup();
+  buildFilterUI(M);
+}
+function buildFilterUI(M){
+  const types=[...new Set(M.db.map(d=>d.t))].sort((a,b)=>M.db.filter(d=>d.t===b).length-M.db.filter(d=>d.t===a).length);
+  if(!F.ty||![...F.ty].every(t=>types.includes(t))) F.ty=new Set(types);
+  const cnt=(k,v)=>M.db.filter(d=>d[k]===v).length;
+  $('#fty').innerHTML=types.map(t=>`<button data-t="${esc(t)}" aria-pressed="${F.ty.has(t)}">${esc(t)} <small>${cnt('t',t)}</small></button>`).join('');
+  $('#fpv').innerHTML=PV.map(t=>`<button data-t="${esc(t)}" aria-pressed="${F.pv.has(t)}">${esc(t)} <small>${cnt('pv',t)}</small></button>`).join('');
+  $('#fsl').value=F.sl; $('#far').value=F.ar; $('#fpr').value=String(F.pr); $('#fpod').checked=F.pod; $('#fnav').checked=F.nav; $('#fsort').value=F.sort;
+  $('#fslh').textContent=`Model návrhu pokrytí počítá se sklonem do ${M.meta.maxsl??8} %. Filtr mění jen zobrazení, ne bilanci.`;
+}
+function pass(d){
+  return fitInfo(d).ok && (d.dp??1)<=F.dp && (F.sl>20||d.sl<=F.sl) && d.a>=AREAS[F.ar] && (F.pr===2||d.pt<=F.pr) && F.pv.has(d.pv) && F.ty.has(d.t) && !(F.pod&&d.pod!=='splněno') && !(F.fz==='out'&&d.zp>0) && !(F.fz==='in'&&!(d.zp>0));
+}
+function applyFilter(){
+  if(!C) return;
+  $('#fslv').textContent=F.sl>20?'bez omezení':`${F.sl} %`;
+  $('#farv').textContent=AREAS[F.ar]?`${N(AREAS[F.ar])} m²`:'bez omezení';
+  VIS=DB.filter(x=>pass(x.d));
+  G.dbP.clearLayers(); G.dbM.clearLayers();
+  VIS.forEach(x=>{G.dbP.addLayer(x.poly); if(F.nav&&x.mk) G.dbM.addLayer(x.mk)});
+  const A=VIS.reduce((t,x)=>t+x.d.a,0), K=VIS.reduce((t,x)=>t+x.d.cap,0);
+  const M_=F.fp?VIS.reduce((t,x)=>t+(fitInfo(x.d).n||0),0):null;
+  $('#fsum').innerHTML=`<div><b>${N(VIS.length)}</b><span>ploch z ${N(DB.length)}</span></div><div><b>${(A/10000).toLocaleString('cs-CZ',{maximumFractionDigits:1})} ha</b><span>celková plocha</span></div>`+
+    (F.fp?`<div><b>${N(M_)}</b><span>bunkrů ${F.fp[0].toLocaleString('cs-CZ')} × ${F.fp[1].toLocaleString('cs-CZ')} m (odhad)</span></div>`:`<div><b>${N(K)}</b><span>osob max. (2 m²/os.)</span></div>`)+
+    (()=>{const z=VIS.filter(x=>x.d.zp>0).length;return z?`<div><b style="color:var(--flood)">${N(z)}</b><span>z toho v povodňovém území</span></div>`:''})();
+  shown=40; renderList(); styleCity(); relabel();
+}
+function styleCity(){
+  if(!C) return;
+  base.water.forEach(l=>l.setStyle({stroke:false,fillColor:css('--water'),fillOpacity:1}));
+  base.bld.forEach(l=>l.setStyle({stroke:false,fillColor:css('--bld'),fillOpacity:1}));
+  base.rd2.forEach(l=>l.setStyle({color:css('--rdc'),weight:1,opacity:.9}));
+  base.rd1.forEach(l=>l.setStyle({color:css('--rdc'),weight:2.5,opacity:1}));
+  base.rail.forEach(l=>l.setStyle({color:css('--rail'),weight:1.5,dashArray:'4 3'}));
+  base.bnd.forEach(l=>l.setStyle({color:css('--muted'),weight:1.5,dashArray:'6 4',fill:false}));
+  G.hexD.getLayers().forEach((l,i)=>l.setStyle({color:css('--map'),weight:2,fillColor:ramp(G.hexD._d[i].d,DBR,'d'),fillOpacity:.82}));
+  G.hexU.getLayers().forEach((l,i)=>l.setStyle({color:css('--map'),weight:2,fillColor:ramp(G.hexU._d[i].u,UBR,'u'),fillOpacity:.55}));
+  G._iso.forEach(i=>i.l.setStyle({stroke:true,color:css('--shelter'),weight:1.5,opacity:.9,fillColor:css('--shelter'),fillOpacity:i.t===C.meta.T?.18:.08,dashArray:i.t===C.meta.T?null:'5 4'}));
+  G.fz&&G.fz.getLayers().forEach(l=>l.setStyle({color:css('--flood'),weight:1.2,opacity:.8,dashArray:'3 3',fillColor:css('--flood'),fillOpacity:ortho?.10:.16}));
+  G.under.getLayers().forEach(l=>l.setStyle({color:css('--panel'),weight:2,fillColor:css('--rest'),fillOpacity:1}));
+  DB.forEach(({d,poly})=>{const v=rv(d.id).v; const sel=d.id===cur; const nav=F.nav&&d.n>0;
+    const col=v==='ne'?css('--no'):v==='ok'?css('--ok'):(ortho?'#ffd400':css('--site'));
+    const fzc=d.zp>0&&v!=='ne';
+    poly.setStyle({color:fzc?css('--flood'):col,weight:sel?3.5:(fzc?2.6:(ortho?2:1.2)),opacity:1,dashArray:v==='ne'?'5 4':(d.pt===1?'6 3':(d.pt===2?'2 3':null)),
+      fillColor:col,fillOpacity:ortho?(sel?.25:.06):(sel?.6:(nav?.45:.22))})});
+}
+const DBR=[10,40,80,130], UBR=[25,100,250,500];
+function show(n){
+  layer=n; ['b1','b2','b3'].forEach((id,i)=>$('#'+id).setAttribute('aria-pressed',String(i+1===n)));
+  ['hexD','hexU','iso500','iso800','shel','under','dbP','dbM','fz'].forEach(k=>G[k]&&map.removeLayer(G[k]));
+  const on=g=>g.addTo(map);
+  if(n===1){on(G.iso500);if($('#c800').checked)on(G.iso800);on(G.under);on(G.shel)}
+  if(n===2){if(!ortho)on(G.hexD);on(G.shel)}
+  if(n===3){if(!ortho)on(G.hexU);if($('#c800').checked)on(G.iso800);on(G.iso500);if(G.fz&&$('#cfz').checked)on(G.fz);on(G.dbP);on(G.shel);on(G.dbM)}
+  $('#fsec').hidden=n!==3;
+  legend();
+}
+function legend(){
+  const meta=C.meta;
+  const r=(pre,br,unit)=>`<div class="ramp">${[1,2,3,4,5].map(i=>`<i style="background:var(--${pre}${i})"></i>`).join('')}</div><div class="ramp-l"><span>0</span>${br.map(b=>`<span>${b}</span>`).join('')}<span>${unit}</span></div>`;
+  const a=C.sh.find(s=>s.k==='A');
+  const shel=`<div class="key"><div class="lbl sh" style="width:18px;height:18px;font-size:11px">Ú</div>Stálý úkryt HZS${a?` (${N(C.sh.filter(s=>s.k==='A').reduce((t,s)=>t+s.c,0))} míst)`:''}</div><div class="key"><div class="lbl sh" style="width:18px;height:18px;font-size:11px">G</div>Podzemní garáž, kapacita odhadem</div>`;
+  let h='';
+  if(layer===1) h=shel+`<div class="key"><span class="sw" style="background:var(--shelter);opacity:.35;border:1.5px solid var(--shelter)"></span>Pěší dosah ${meta.T} m po síti</div><div class="key"><span class="sw" style="background:var(--rest);border-radius:50%"></span>Podchod, jen krytí venku</div>`;
+  if(layer===2) h=`<div>Hustota obyvatel, osob na hektar (šestiúhelník 200 m)</div>`+r('d',DBR,'os./ha')+`<div>Byty z RÚIAN × ${meta.opb.toLocaleString('cs-CZ')} osoby na byt, ${N(meta.budov)} domů.</div>`;
+  const reach=`<div class="key"><span class="sw" style="background:var(--shelter);opacity:.35;border:1.5px solid var(--shelter)"></span>Pěší dosah ${meta.T} m od existujících úkrytů (kapacita úkrytu nemusí stačit všem v dosahu)</div>`;
+  const sc=ortho?'#ffd400':'var(--site)';
+  const keys=`<div class="key"><span class="sw" style="background:${ortho?'transparent':'color-mix(in srgb,var(--site) 30%,transparent)'};border:2px solid ${sc}"></span>Vhodná plocha (podle filtru)</div>
+   <div class="key"><span class="sw" style="background:transparent;border:2px dashed ${sc}"></span>Příjezd jen po volném terénu – ověřit</div>
+   <div class="key"><span class="lbl" style="width:18px;height:18px;font-size:11px">1</span>Plocha v návrhu pokrytí, číslo = pořadí</div>
+   <div class="key"><span class="sw" style="background:color-mix(in srgb,var(--site) 30%,transparent);border:2.5px solid var(--flood)"></span>Plocha v povodňovém území (tyrkysový obrys a kroužek u čísla)</div>
+   ${C.fz&&C.fz.length?`<div class="key"><span class="sw" style="background:color-mix(in srgb,var(--flood) 22%,transparent);border:1.5px dashed var(--flood)"></span>Povodňové území (VÚV TGM, směrnice o povodních)</div>`:''}`;
+  if(layer===3) h=(ortho?'':`<div>Obyvatelé bez úkrytu v dosahu ${meta.T} m, osob v šestiúhelníku</div>`+r('u',UBR,'osob'))+keys+reach+shel;
+  $('#legend').innerHTML=h;
+}
+['b1','b2','b3'].forEach((id,i)=>$('#'+id).addEventListener('click',()=>show(i+1)));
+$('#c800').addEventListener('change',()=>show(layer));
+$('#fsl').addEventListener('input',e=>{F.sl=+e.target.value;applyFilter()});
+$('#fdp').addEventListener('change',e=>{F.dp=+e.target.value;applyFilter()});
+const readFp=()=>{const v=$('#ffp').value; $('#ffpc').hidden=v!=='custom'; $('#ffpc').style.display=v==='custom'?'grid':'none';
+  F.fp=!v?null:(v==='custom'?[Math.max(0.5,+$('#ffw').value||0),Math.max(0.5,+$('#ffl').value||0)]:v.split('x').map(Number)); if(F.fp&&F.fp[0]>F.fp[1]) F.fp=[F.fp[1],F.fp[0]];
+  F.od=Math.max(0,+$('#ffo').value||0); applyFilter()};
+['#ffp','#ffw','#ffl','#ffo'].forEach(q=>$(q).addEventListener('input',readFp));
+$('#far').addEventListener('input',e=>{F.ar=+e.target.value;applyFilter()});
+$('#fpr').addEventListener('change',e=>{F.pr=+e.target.value;applyFilter()});
+$('#fpod').addEventListener('change',e=>{F.pod=e.target.checked;applyFilter()});
+$('#ffz').addEventListener('change',e=>{F.fz=e.target.value;applyFilter()});
+$('#cfz').addEventListener('change',()=>show(layer));
+$('#fnav').addEventListener('change',e=>{F.nav=e.target.checked;applyFilter()});
+$('#fsort').addEventListener('change',e=>{F.sort=e.target.value;shown=40;renderList()});
+const chipToggle=(el,set)=>el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=b.dataset.t;
+  if(e.altKey||e.metaKey){set.clear();set.add(t)} else if(set.has(t)) set.delete(t); else set.add(t);
+  el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(set.has(x.dataset.t))));applyFilter()});
+chipToggle($('#fpv'),F.pv); $('#fty').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=b.dataset.t; if(F.ty.has(t))F.ty.delete(t);else F.ty.add(t);
+  b.setAttribute('aria-pressed',String(F.ty.has(t)));applyFilter()});
+$('#freset').addEventListener('click',()=>{F.fz='';$('#ffz').value='';F.dp=1;$('#fdp').value='1';F.sl=21;F.ar=0;F.pr=1;F.pv=new Set(PV);F.ty=null;F.pod=false;F.nav=true;F.fp=null;F.od=0;$('#ffp').value='';$('#ffo').value='0';$('#ffpc').style.display='none';
+  const fp=$('#fpv'); fp.replaceWith(fp.cloneNode(false)); chipToggle($('#fpv'),F.pv); buildFilterUI(C); applyFilter()});
+function relabel(){if(!C)return;const z=map.getZoom();DB.forEach(({d,mk})=>mk&&mk.setIcon((z>=15||d.n<=20||d.id===cur)?mk._big:mk._small))}
+map.on('zoomend',relabel);
+const ST={'splněno':'ok','nesplněno':'no','neověřeno':'unk'};
+const CONF={Certain:'[Certain]',Likely:'[Likely]',Guessing:'[Guessing]'};
+const HWX={motorway:'dálnice',trunk:'silnice pro motorová vozidla',primary:'silnice I. třídy',secondary:'silnice II. třídy',tertiary:'silnice III. třídy',unclassified:'místní komunikace',residential:'obytná ulice',living_street:'obytná zóna',service:'účelová / obslužná komunikace',road:'komunikace'};
+const PTX=['z pojízdné komunikace','po volném terénu – ověřit','bez zjištěného příjezdu'];
+function sorted(){
+  const v=VIS.map(x=>x.d), k=F.sort;
+  if(k==='a') return v.sort((a,b)=>b.a-a.a);
+  if(k==='u5') return v.sort((a,b)=>b.u5-a.u5||b.a-a.a);
+  if(k==='sl') return v.sort((a,b)=>a.sl-b.sl||b.a-a.a);
+  return v.sort((a,b)=>(a.n||1e9)-(b.n||1e9)||b.a-a.a);
+}
+function renderList(){
+  const v=sorted();
+  $('#list').innerHTML=v.slice(0,shown).map(d=>{const r=rv(d.id).v;
+    return `<button class="row" data-id="${esc(d.id)}" aria-current="${d.id===cur}"><span class="rank${d.n?'':' o'}">${d.n||'–'}</span><b>${esc(d.st||'—')}</b><span class="q">${N(d.a)}<small>m²</small></span><span class="t">${d.zp>0?`<span class="pill fz">povodňové území ${d.zp} %</span>`:''}<span>${esc(d.t)}</span><span>sklon ${d.sl.toLocaleString('cs-CZ')} %</span><span>${esc(d.pv)}</span>${d.dp===2?'<span class="pill ne">doprava nelze</span>':d.dp===1?'<span class="pill">doprava ověřit</span>':''}${d.n?`<span class="pill rob">návrh ${N(d.np)} os.</span>`:''}${r==='ok'?'<span class="pill ok">použitelná</span>':r==='ne'?'<span class="pill ne">nepoužitelná</span>':''}</span></button>`}).join('')||'<div class="hint" style="padding:10px 4px">Filtru neodpovídá žádná plocha.</div>';
+  const all=Object.values(REV[rk()]||{}); const ok=all.filter(x=>x.v==='ok').length, ne=all.filter(x=>x.v==='ne').length;
+  $('#revsum').textContent=ok+ne?`Ohodnoceno ${ok+ne} ploch: ${ok} použitelných, ${ne} nepoužitelných`:'Zatím bez hodnocení – otevřete plochu a ohodnoťte ji';
+  $('#more').hidden=v.length<=shown; $('#more').textContent=`Zobrazit dalších ${Math.min(40,v.length-shown)} (z ${N(v.length)})`;
+}
+$('#list').addEventListener('click',e=>{const b=e.target.closest('.row');if(b)select(b.dataset.id,true)});
+$('#more').addEventListener('click',()=>{shown+=40;renderList()});
+$('#revcopy').addEventListener('click',async()=>{ if(!C) return; const r=REV[rk()]||{};
+  const rows=DB.map(x=>x.d).filter(d=>r[d.id]&&(r[d.id].v||r[d.id].note)).map(d=>({id:d.id,parcela:d.pa,ulice:d.st,ll:d.ll,navrh:d.n||null,hodnoceni:r[d.id].v||null,poznamka:r[d.id].note||''}));
+  const txt=JSON.stringify({mesto:C.meta.key,vypocet:C.meta.run||C.meta.date,plochy:rows},null,1);
+  const out=$('#revout'); out.value=txt; out.hidden=false;
+  try{ await navigator.clipboard.writeText(txt); $('#revcopy').textContent='Zkopírováno – vložte do chatu'; }catch(e){ out.focus(); out.select(); $('#revcopy').textContent='Označeno – zkopírujte Ctrl/Cmd+C'; }
+  setTimeout(()=>$('#revcopy').textContent='Zkopírovat hodnocení',4000); });
+$('#fcsv').addEventListener('click',async()=>{ if(!C) return;
+  const H=['id','parcela','ulice','lat','lon','typ','plocha_m2','rozmery_m','kapacita_max','sklon_pct','povrch','zdroj_povrchu','prijezd','ke_komunikaci_m','poddolovani','podzemni_objekty','izs','vedeni_10m','do_cile_m','obyv_500m','bez_ukrytu_500m','navrh_poradi','navrh_osob','doprava','doprava_komunikace','jerab_t','vylozeni_m','doprava_poznamka','povodnove_uzemi_pct','pudorys_vejde','pudorys_kusu_odhad','hodnoceni','poznamka'];
+  const q=v=>{v=v==null?'':String(v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const rows=sorted().map(d=>{const r=rv(d.id);return [d.id,d.pa,d.st,d.ll[0],d.ll[1],d.t,d.a,d.dim,d.cap,String(d.sl).replace('.',','),d.pv,d.pvz,PTX[d.pt],String(d.pr).replace('.',','),d.pod,d.pz,d.izs,d.v?'ano':'ne',d.cil,d.o5,d.u5,d.n||'',d.np||'',['bez omezení','ověřit','nelze'][d.dp??1],HWX[d.ds]||d.ds||'',d.jt||'',d.jr||'',d.dpn||'',d.zp||0,F.fp?'ano':'',F.fp?fitInfo(d).n:'',r.v||'',r.note||''].map(q).join(';')});
+  const txt='﻿'+H.join(';')+'\n'+rows.join('\n');
+  const name=`plochy-${C.meta.key}.csv`;
+  const fallback=()=>{ const o=$('#csvout'); o.value=txt; o.hidden=false; o.select(); };
+  if(window.claude&&window.claude.use){   // v prohlížeči claude.ai: uložení přes schválení prohlížeče
+    const dl=DLP?await DLP:null;
+    if(!dl){ fallback(); return; }
+    try{ await dl.save({filename:name,data:txt}); }catch(e){ if(e&&e.code!=='declined'&&e.code!=='rate_limited') fallback(); }
+    return; }
+  try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000); }
+  catch(e){ fallback(); } });
+function fitList(d){ const g=WG(), od=F.od; const T=[['6 × 8',6,8],['8 × 12',8,12],['10 × 20',10,20],['12 × 30',12,30]];
+  return T.map(([n,w,l])=>{const W=w+2*od,Lr=l+2*od,k=g.findIndex(x=>x>=W-1e-9);const ok=k>=0&&d.fl&&d.fl[k]>=Lr;return `${n} <b style="color:var(${ok?'--ok':'--no'})">${ok?'ano':'ne'}</b>`}).join(' · '); }
+function select(id,fly){
+  cur=id; const x=DB.find(q=>q.d.id===id); if(!x) return; const d=x.d;
+  if(layer!==3) show(3);
+  renderList(); styleCity(); relabel();
+  const chip=(k,v)=>`<span class="st ${ST[v]||'unk'}">${k}: ${v}</span>`;
+  const chips=[(d.zp>0?`<span class="st fz">Povodňové území: ${d.zp} % plochy</span>`:chip('Mimo povodňové území','splněno')),chip('Mimo poddolované území',d.pod),chip('Bez podzemních objektů pod plochou',d.pz),chip('IZS dál než 20 m',d.izs),chip('Sklon ≤ '+(C.meta.maxsl??8)+' %',d.sl<=(C.meta.maxsl??8)?'splněno':'nesplněno'),chip('Příjezd',d.pt===0?'splněno':d.pt===1?'neověřeno':'nesplněno'),chip('Doprava a jeřáb',['splněno','neověřeno','nesplněno'][d.dp??1])].join('');
+  $('#card').innerHTML=`${d.zp>0?`<div class="fzbar">Plocha leží v povodňovém území (${d.zp} % plochy) – bunkr potřebuje ochranu před vodou nebo jinou plochu</div>`:''}<h3>${d.n?'#'+d.n+' · ':''}${esc(d.st||'bez názvu ulice')}</h3>
+   <div class="sub" style="margin:0">${esc(d.t)} · ${d.dim} m · ${CONF[d.j]||''}${d.pf?' · <b>velká veřejná plocha</b>':''}${d.rob?' · robustní v návrhu':''}</div>
+   <div class="facts"><div><span>Využitelná plocha</span><strong>${N(d.a)} m²</strong></div><div><span>Kapacita max.</span><strong>${N(d.cap)} os.</strong></div><div><span>Sklon terénu</span><strong>${d.sl.toLocaleString('cs-CZ')} %</strong></div>
+   <div><span>Povrch</span><strong style="font-size:15px">${esc(d.pv)}</strong><span>${esc(d.pvz)}</span></div><div><span>Příjezd</span><strong style="font-size:15px">${d.pt===0?d.pr.toLocaleString('cs-CZ')+' m od silnice':PTX[d.pt]}</strong></div><div><span>Vedení do 10 m</span><strong>${d.v?'ano':'ne'}</strong></div>
+   <div><span>Obyvatel do ${C.meta.T} m</span><strong>${N(d.o5)}</strong></div><div><span>Z toho bez úkrytu</span><strong>${N(d.u5)}</strong></div><div><span>V návrhu pokrytí</span><strong>${d.n?N(d.np)+' os.':'ne'}</strong></div></div>
+   <div class="checks">${chips}</div>
+   <div class="sub" style="margin:0"><b>Doprava a montáž:</b> ${['bez zjištěného omezení','ověřit','nelze'][d.dp??1]}${d.jt?` · autojeřáb ~${d.jt} t (vyložení ${d.jr} m)`:''}${d.ds?` · přístup z: ${esc(HWX[d.ds]||d.ds)}`:''}${d.dpn?` – ${esc(d.dpn)}`:''}</div>
+   <div class="sub" style="margin:0">Vejde se (s odstupem ${F.od.toLocaleString('cs-CZ')} m): ${fitList(d)}</div>
+   <div class="sub" style="margin:0">ID plochy ${esc(d.id)} · do možného cíle (železnice, silnice I. tř., průmysl) ${N(d.cil)} m</div>
+   ${String(d.pa).startsWith('osm-')?`<div class="sub" style="margin:0">Parkoviště z OpenStreetMap na parcele mimo povolený seznam (např. zastavěná plocha a nádvoří) – <a href="https://www.openstreetmap.org/${String(d.pa).slice(4).replace(/^w/,'way/').replace(/^r/,'relation/')}" target="_blank" rel="noopener">detail v OSM</a></div>`:`<div class="sub" style="margin:0">Parcela KN (RÚIAN id ${esc(d.pa)}) – <a href="https://vdp.cuzk.gov.cz/vdp/ruian/parcely/${esc(d.pa)}" target="_blank" rel="noopener">detail v RÚIAN</a></div>`}
+   <a href="https://mapy.com/cs/letecka?x=${d.ll[1]}&y=${d.ll[0]}&z=19" target="_blank" rel="noopener">Otevřít letecký snímek na mapy.com</a>
+   <div class="rev" role="group" aria-label="Hodnocení plochy"><span class="sub" style="margin:0">Hodnocení:</span><button class="y" data-v="ok" aria-pressed="${rv(id).v==='ok'}">Použitelná</button><button class="n" data-v="ne" aria-pressed="${rv(id).v==='ne'}">Nepoužitelná</button>
+   <textarea id="revnote" placeholder="Poznámka (proč), nepovinné" aria-label="Poznámka k hodnocení">${esc(rv(id).note||'')}</textarea></div>`;
+  $('#card').querySelectorAll('.rev button').forEach(b=>b.addEventListener('click',()=>{const k=rk(); REV[k]=REV[k]||{}; const cur0=REV[k][id]||{}; REV[k][id]={...cur0,v:cur0.v===b.dataset.v?undefined:b.dataset.v}; saveRev(); select(id,false);}));
+  $('#revnote').addEventListener('change',e=>{const k=rk(); REV[k]=REV[k]||{}; REV[k][id]={...(REV[k][id]||{}),note:e.target.value}; saveRev();});
+  $('#detail').hidden=false;
+  if(fly){map.flyToBounds(L.polygon(d.ll2).getBounds(),{maxZoom:18,padding:[60,60],duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:.6});
+    if(matchMedia('(max-width:900px)').matches) $('#map').scrollIntoView({behavior:'smooth'});}
+}
+/* --- grafy --- */
+function cumChart(){
+  const svg=$('#cum'), W=svg.clientWidth||380, H=200, m={l:44,r:12,t:12,b:30};
+  const pop=C.bal.populace, d=C.cum, n=d[d.length-1][0];
+  const x=v=>m.l+(W-m.l-m.r)*v/Math.max(1,n), y=v=>m.t+(H-m.t-m.b)*(1-v/pop);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('height',H);
+  const grid=[0,.25,.5,.75,1].map(f=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(pop*f)}" y2="${y(pop*f)}" stroke="var(--line)"/><text x="${m.l-6}" y="${y(pop*f)+4}" text-anchor="end">${f*100} %</text>`).join('');
+  const step=n>60?20:n>30?10:5, xt=[];for(let i=0;i<=n;i+=step)xt.push(i);
+  const xa=xt.map(i=>`<text x="${x(i)}" y="${H-10}" text-anchor="middle">${i}</text>`).join('');
+  const pts=d.map(([i,v])=>`${x(i)},${y(v)}`).join(' ');
+  const base=d[0][1];
+  const hit80=d.find(p=>p[1]>=pop*.8), hit95=d.find(p=>p[1]>=pop*.95);
+  const mark=p=>p?`<line x1="${x(p[0])}" x2="${x(p[0])}" y1="${y(p[1])}" y2="${H-m.b}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle cx="${x(p[0])}" cy="${y(p[1])}" r="4" fill="var(--site)" stroke="var(--panel)" stroke-width="2"/>`:'';
+  svg.innerHTML=`${grid}${xa}<text x="${W-m.r}" y="${H-10+0}" text-anchor="end" dy="0" style="display:none"></text>
+   <rect x="${m.l}" y="${y(base)}" width="${W-m.l-m.r}" height="${y(0)-y(base)}" fill="var(--shelter)" opacity=".18"/>
+   <polygon points="${x(0)},${y(0)} ${pts} ${x(n)},${y(0)}" fill="var(--site)" opacity=".14"/>
+   <polyline points="${pts}" fill="none" stroke="var(--site)" stroke-width="2" stroke-linejoin="round"/>
+   ${mark(hit80)}${mark(hit95)}
+   <text x="${m.l+6}" y="${y(base)-6}" class="lab" style="fill:var(--shelter)">Existující úkryty ${P1(base/pop)}</text>
+   <line id="cx" y1="${m.t}" y2="${H-m.b}" stroke="var(--fg)" opacity="0"/>`;
+  $('#cumnote').textContent=(hit80?`Prvních ${hit80[0]} ploch pokryje 80 % obyvatel`:'80 % obyvatel plochy nepokryjí')+(hit95?`, ${hit95[0]} ploch 95 %.`:`; zbytek je deficit bez vhodné plochy nebo roztroušené domy.`)+' Osa x: počet ploch v pořadí priority.';
+  const wrap=$('#cumwrap'); let tip=wrap.querySelector('.tip'); if(!tip){tip=document.createElement('div');tip.className='tip';tip.hidden=true;wrap.appendChild(tip)}
+  svg.onpointermove=e=>{const b=svg.getBoundingClientRect(); const px=(e.clientX-b.left)*W/b.width; const i=Math.max(0,Math.min(n,Math.round((px-m.l)/(W-m.l-m.r)*n)));
+    const p=d[i]; const cx=svg.querySelector('#cx'); cx.setAttribute('x1',x(i));cx.setAttribute('x2',x(i));cx.setAttribute('opacity',.35);
+    tip.hidden=false; tip.innerHTML=i?`<b>${i} ploch</b><br>${N(p[1])} osob · ${P1(p[1]/pop)}`:`<b>Bez nových ploch</b><br>${N(p[1])} osob · ${P1(p[1]/pop)}`;
+    tip.style.left=Math.min(b.width-150,Math.max(0,(x(i)/W)*b.width+10))+'px'; tip.style.top='6px';};
+  svg.onpointerleave=()=>{tip.hidden=true;svg.querySelector('#cx').setAttribute('opacity',0)};
+}
+function zsjChart(){
+  const z=C.zsj.slice(0,12), svg=$('#zsj'), W=svg.clientWidth||380, rowH=24, m={l:118,r:52,t:4,b:4}, H=m.t+m.b+rowH*z.length;
+  const mx=Math.max(...z.map(r=>r.p)); const sx=v=>(W-m.l-m.r)*v/mx;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('height',H);
+  svg.innerHTML=z.map((r,i)=>{const y=m.t+i*rowH+5, h=rowH-10; let x0=m.l; const seg=(v,c)=>{if(v<=0)return'';const w=Math.max(1,sx(v)-2);const s=`<rect x="${x0}" y="${y}" width="${w}" height="${h}" fill="var(${c})" rx="1"/>`;x0+=sx(v);return s};
+    const nm=r.n.length>17?r.n.slice(0,16)+'…':r.n;
+    return `<g data-i="${i}"><rect x="0" y="${m.t+i*rowH}" width="${W}" height="${rowH}" fill="transparent"/><text x="${m.l-8}" y="${y+h-2}" text-anchor="end" class="lab" style="font-weight:400">${esc(nm)}</text>${seg(r.c,'--shelter')}${seg(r.s,'--site')}${seg(r.d,'--deficit')}<text x="${m.l+sx(r.p)+6}" y="${y+h-2}">${N(r.p)}</text></g>`}).join('');
+  const wrap=$('#zsjwrap'); let tip=wrap.querySelector('.tip'); if(!tip){tip=document.createElement('div');tip.className='tip';tip.hidden=true;wrap.appendChild(tip)}
+  svg.onpointermove=e=>{const g=e.target.closest('g[data-i]'); if(!g){tip.hidden=true;return} const r=z[+g.dataset.i]; const b=svg.getBoundingClientRect();
+    tip.hidden=false; tip.innerHTML=`<b>${esc(r.n)}</b> · ${N(r.p)} obyvatel<br>Pokryto úkryty: ${N(r.c)}<br>Na plochách: ${N(r.s)}<br>Deficit: ${N(r.d)}`;
+    tip.style.left=Math.min(b.width-190,(e.clientX-b.left)+12)+'px'; tip.style.top=(e.clientY-b.top+12)+'px';};
+  svg.onpointerleave=()=>tip.hidden=true;
+}
+async function enterCity(key){
+  const entry=REG.find(c=>c.key===key);
+  try{ C=await loadCity(key); }catch(e){ location.hash=''; return; }
+  cur=null; shown=40;
+  document.querySelectorAll('[data-view]').forEach(v=>v.hidden=v.dataset.view!=='city');
+  Object.values(GCR).forEach(g=>map.removeLayer(g));
+  buildCity(C); G.base.addTo(map); BM.addTo(map);
+  document.getElementById('bmv').onclick=()=>setOrtho(false); document.getElementById('bmo').onclick=()=>setOrtho(true);
+  $('#revout').hidden=true;
+  const meta=C.meta;
+  $('#crumbs').innerHTML=`<a href="#">Česká republika</a><span>›</span><span>${esc(entry?.kraj||'')}</span><span>›</span><b style="color:var(--fg)">${esc(meta.city)}</b>`;
+  $('#c-eye').textContent=`${entry?.kraj||''} · fáze 1`;
+  $('#c-name').textContent=meta.city;
+  $('#c-scen').textContent=`Dosah ${meta.T} m po pěší síti, noční populace (bydliště). Výpočet ${new Date(meta.date).toLocaleDateString('cs-CZ')}.`;
+  $('#c-src').textContent=`Zdroje: obyvatelé ${meta.pop_src}; HZS ČR (stálé úkryty), ČÚZK RÚIAN, DMR 5G a DMP, ČGS, VÚV TGM, © přispěvatelé OpenStreetMap.`;
+  const B=C.bal, tot=B.populace;
+  const parts=[['Pokryto existujícími úkryty',B.pokryto_existujici,'--shelter'],['Potřeba na navržených plochách',B.potreba_plochy,'--site'],['Bez volné plochy v dosahu',B.bez_vhodne_plochy,'--deficit'],[`Roztroušení, pod ${meta.ming} osob na plochu`,B.pod_prahem,'--rest']];
+  $('#kpi').innerHTML=`<div><b class="big">${N(tot)}</b><span>obyvatel</span></div><div><b class="big">${N(C.db.length)}</b><span>vhodných ploch v databázi</span></div><div><b class="big" style="color:var(--site)">${meta.nsel}</b><span>ploch v návrhu pokrytí</span></div>`;
+  $('#balnote').textContent=`Návrh = nejmenší sada ploch pro modul ${(meta.model||[10,20]).join(' × ')} m, která pokryje obyvatele do ${meta.T} m chůze. Počítá se sklonem do ${meta.maxsl??8} % a s příjezdem; na filtru výše nezávisí.`;
+  $('#balbar').innerHTML=parts.map(p=>`<i style="flex:${Math.max(p[1],tot*0.004)};background:var(${p[2]})"></i>`).join('');
+  $('#balrows').innerHTML=parts.map(p=>`<span class="sw" style="background:var(${p[2]})"></span><span>${p[0]}</span><span class="n">${N(p[1])}</span><span class="p">${P1(p[1]/tot)}</span>`).join('');
+  $('#sens').innerHTML=`<thead><tr><th>Práh</th><th>Pokryto úkryty</th><th>Ploch</th><th>Na plochách</th><th>Bez plochy</th></tr></thead><tbody>`+C.sens.map(r=>`<tr class="${r.prah_m===meta.T?'cur':''}"><td>${r.prah_m} m</td><td>${N(r.pokryto_existujici)}</td><td>${r.ploch}</td><td>${N(r.potreba_plochy)}</td><td>${N(r.bez_vhodne_plochy)}</td></tr>`).join('')+'</tbody>';
+  $('#detail').hidden=true;
+  show(3); applyFilter(); if(ortho) setOrtho(true);
+  map.fitBounds(L.polygon(polys(C.bnd[0])).getBounds(),{padding:[10,10]});
+  requestAnimationFrame(()=>{cumChart();zsjChart()});
+  $('#panel').scrollTop=0;
+}
+function enterCR(){
+  C=null; document.querySelectorAll('[data-view]').forEach(v=>v.hidden=v.dataset.view!=='cr');
+  Object.values(G).forEach(g=>map.removeLayer(g)); map.removeLayer(ORT); BM.remove(); (base.bnd||[]).forEach(l=>map.removeLayer(l));
+  GCR.stat.addTo(map); GCR.kraje.addTo(map); if($('#c-sh').checked) GCR.sh.addTo(map); GCR.cities.addTo(map);
+  $('#crumbs').innerHTML='<b style="color:var(--fg)">Česká republika</b>';
+  styleCR(); renderCities();
+  map.fitBounds(stat.getBounds(),{padding:[10,10]});
+}
+$('#c-sh').addEventListener('change',()=>{ if($('#c-sh').checked){GCR.sh.addTo(map);GCR.cities.remove();GCR.cities.addTo(map)} else map.removeLayer(GCR.sh) });
+function route(){ const k=location.hash.replace('#',''); if(k&&REG.some(c=>c.key===k)) enterCity(k); else enterCR(); }
+window.addEventListener('hashchange',route);
+route();
+const restyle=()=>{styleCR(); styleCity(); if(C){cumChart();zsjChart()}};
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',restyle);
+new MutationObserver(restyle).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+let rz; addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(C){cumChart();zsjChart()}},150)});
+})();
+</script>
